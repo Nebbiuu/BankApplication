@@ -1,0 +1,57 @@
+name: Java File Report
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  java-report:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Scan Java files and generate report
+        run: |
+          echo "Java File Report" > java-file-report.txt
+          echo "================" >> java-file-report.txt
+          echo "" >> java-file-report.txt
+
+          JAVA_FILES=$(find . -name "*.java")
+
+          if [ -z "$JAVA_FILES" ]; then
+            echo "ERROR: No .java files found."
+            exit 1
+          fi
+
+          TOTAL_FILES=$(echo "$JAVA_FILES" | wc -l)
+          TOTAL_LINES=0
+
+          echo "Number of .java files: $TOTAL_FILES" >> java-file-report.txt
+          echo "" >> java-file-report.txt
+          echo "Per-file breakdown:" >> java-file-report.txt
+
+          for file in $JAVA_FILES; do
+            LINES=$(wc -l < "$file")
+            TOTAL_LINES=$((TOTAL_LINES + LINES))
+            echo "$file – $LINES" >> java-file-report.txt
+          done
+
+          echo "" >> java-file-report.txt
+          echo "Total lines of code: $TOTAL_LINES" >> java-file-report.txt
+
+      - name: Fail if .class files are committed
+        run: |
+          CLASS_FILES=$(find . -name "*.class")
+          if [ -n "$CLASS_FILES" ]; then
+            echo "ERROR: Compiled .class files found in repository:"
+            echo "$CLASS_FILES"
+            exit 1
+          fi
+
+      - name: Upload java-file-report.txt
+        uses: actions/upload-artifact@v4
+        with:
+          name: java-file-report
+          path: java-file-report.txt
